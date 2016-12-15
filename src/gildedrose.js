@@ -4,16 +4,14 @@ const SULFURAS = 'Sulfuras, Hand of Ragnaros';
 const PASSES = 'Backstage passes to a TAFKAL80ETC concert';
 const BRIE = 'Aged Brie';
 
-function canChangeQuality(item) {
-  return item.name !== SULFURAS;
+function isLegendary(item) {
+  return item.name === SULFURAS;
 }
 
 function adjustQuality(item) {
   if (item.name !== BRIE && item.name !== PASSES) {
     if (item.quality > 0) {
-      if (item.name !== SULFURAS) {
-        item.quality = item.quality - 1;
-      }
+      item.quality = item.quality - 1;
     }
   } else {
     if (item.quality < 50) {
@@ -37,9 +35,7 @@ function adjustQuality(item) {
     if (item.name !== BRIE) {
       if (item.name !== PASSES) {
         if (item.quality > 0) {
-          if (item.name !== SULFURAS) {
-            item.quality = item.quality - 1;
-          }
+          item.quality = item.quality - 1;
         }
       } else {
         item.quality = item.quality - item.quality;
@@ -52,16 +48,12 @@ function adjustQuality(item) {
   }
 }
 
-function adjustSellIn(item) {
-  if (item.name !== SULFURAS) {
-    item.sell_in--;
-  }
-}
-
 function update_quality() {
   items.forEach((item) => {
-    adjustSellIn(item);
-    adjustQuality(item);
+    if (!isLegendary(item)) {
+      item.sell_in--;
+      adjustQuality(item);
+    }
   });
 }
 
