@@ -8,51 +8,59 @@ function isLegendary(item) {
   return item.name === SULFURAS;
 }
 
-function adjustQuality(item) {
-  if (item.name !== BRIE && item.name !== PASSES) {
-    if (item.quality > 0) {
-      item.quality = item.quality - 1;
+function calculateNewQuality(item) {
+  const name = item.name;
+  const quality = item.quality;
+  const sell_in = item.sell_in;
+
+  let newQuality = quality;
+
+  if (name !== BRIE && name !== PASSES) {
+    if (newQuality > 0) {
+      newQuality--;
     }
   } else {
-    if (item.quality < 50) {
-      item.quality = item.quality + 1;
-      if (item.name === PASSES) {
-        if (item.sell_in < 10) {
-          if (item.quality < 50) {
-            item.quality = item.quality + 1;
+    if (newQuality < 50) {
+      newQuality++;
+      if (name === PASSES) {
+        if (sell_in < 10) {
+          if (newQuality < 50) {
+            newQuality++;
           }
         }
-        if (item.sell_in < 5) {
-          if (item.quality < 50) {
-            item.quality = item.quality + 1;
+        if (sell_in < 5) {
+          if (newQuality < 50) {
+            newQuality++;
           }
         }
       }
     }
   }
 
-  if (item.sell_in < 0) {
-    if (item.name !== BRIE) {
-      if (item.name !== PASSES) {
-        if (item.quality > 0) {
-          item.quality = item.quality - 1;
+  if (sell_in < 0) {
+    if (name !== BRIE) {
+      if (name !== PASSES) {
+        if (newQuality > 0) {
+          newQuality--;
         }
       } else {
-        item.quality = item.quality - item.quality;
+        newQuality = 0;
       }
     } else {
-      if (item.quality < 50) {
-        item.quality = item.quality + 1;
+      if (quality < 50) {
+        newQuality++;
       }
     }
   }
+
+  return newQuality;
 }
 
 function update_quality() {
   items.forEach((item) => {
     if (!isLegendary(item)) {
       item.sell_in--;
-      adjustQuality(item);
+      item.quality = calculateNewQuality(item);
     }
   });
 }
