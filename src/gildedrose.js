@@ -1,3 +1,5 @@
+const Quality = require('./quality');
+
 var items = [];
 
 const SULFURAS = 'Sulfuras, Hand of Ragnaros';
@@ -8,52 +10,51 @@ function isLegendary(item) {
   return item.name === SULFURAS;
 }
 
+function qualityIncreasesWithAge(item) {
+  return (item.name === PASSES || item.name === BRIE)
+}
+
+function isExpired(item) {
+  return item.sell_in < 0;
+}
+
+function qualityZeroAfterExpired(item) {
+  return item.name === PASSES;
+}
+
 function calculateNewQuality(item) {
   const name = item.name;
   const quality = item.quality;
   const sell_in = item.sell_in;
 
-  let newQuality = quality;
+  let newQuality = new Quality(quality);
 
-  if (name !== BRIE && name !== PASSES) {
-    if (newQuality > 0) {
-      newQuality--;
+  if (isExpired(item)) {
+    if (qualityZeroAfterExpired(item)) {
+      newQuality.set(0);
+    } else if (qualityIncreasesWithAge(item)) {
+      newQuality.add(2);
+    } else {
+      newQuality.subtract(2);
     }
-  } else {
-    if (newQuality < 50) {
-      newQuality++;
+  }
+  else {
+    if (!qualityIncreasesWithAge(item)) {
+      newQuality.subtract(1);
+    } else {
+      newQuality.add(1);
       if (name === PASSES) {
         if (sell_in < 10) {
-          if (newQuality < 50) {
-            newQuality++;
-          }
+          newQuality.add(1);
         }
         if (sell_in < 5) {
-          if (newQuality < 50) {
-            newQuality++;
-          }
+          newQuality.add(1);
         }
       }
     }
   }
 
-  if (sell_in < 0) {
-    if (name !== BRIE) {
-      if (name !== PASSES) {
-        if (newQuality > 0) {
-          newQuality--;
-        }
-      } else {
-        newQuality = 0;
-      }
-    } else {
-      if (quality < 50) {
-        newQuality++;
-      }
-    }
-  }
-
-  return newQuality;
+  return newQuality.value;
 }
 
 function update_quality() {
