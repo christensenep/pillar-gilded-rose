@@ -1,17 +1,86 @@
 const Quality = require('./quality');
 
-var items = [];
-
 const SULFURAS = 'Sulfuras, Hand of Ragnaros';
 const PASSES = 'Backstage passes to a TAFKAL80ETC concert';
 const BRIE = 'Aged Brie';
+
+const qualityCurve = [
+  { sell_in_min: 0, adjustment: 3 },
+  { sell_in_min: 5, adjustment: 2 },
+  { sell_in_min: 10, adjustment: 1 }
+];
+
+var items = [];
+
+function update_quality() {
+  items.forEach((item) => {
+    if (!isLegendary(item)) {
+      item.sell_in--;
+      item.quality = calculateNewQuality(item).value;
+    }
+  });
+}
+
+function calculateNewQuality(item) {
+  if (isExpired(item)) {
+    return calculateExpiredQuality(item);
+  }
+  else {
+    return calculateUnexpiredQuality(item);
+  }
+}
+
+function calculateExpiredQuality(item) {
+  const newQuality = new Quality(item.quality);
+
+  if (qualityZeroAfterExpired(item)) {
+    newQuality.set(0);
+  }
+  else if (qualityIncreasesWithAge(item)) {
+    newQuality.add(2);
+  }
+  else {
+    newQuality.subtract(2);
+  }
+
+  return newQuality;
+}
+
+function calculateUnexpiredQuality(item) {
+  const newQuality = new Quality(item.quality);
+
+  if (usesQualityCurve(item)) {
+    newQuality.add(getCurvedQualityAdjustment(item));
+  }
+  else if (qualityIncreasesWithAge(item)) {
+    newQuality.add(1);
+  }
+  else {
+    newQuality.subtract(1);
+  }
+
+  return newQuality;
+}
+
+function getCurvedQualityAdjustment(item) {
+  return qualityCurve.reduce(function(bestPoint,curvePoint) {
+    if ((curvePoint.sell_in_min <= item.sell_in) && (curvePoint.sell_in_min > bestPoint.sell_in_min)) {
+      bestPoint = curvePoint;
+    }
+    return bestPoint;
+  }).adjustment;
+}
+
+function usesQualityCurve(item) {
+  return item.name === PASSES;
+}
 
 function isLegendary(item) {
   return item.name === SULFURAS;
 }
 
 function qualityIncreasesWithAge(item) {
-  return (item.name === PASSES || item.name === BRIE)
+  return (item.name === PASSES || item.name === BRIE);
 }
 
 function isExpired(item) {
@@ -20,50 +89,6 @@ function isExpired(item) {
 
 function qualityZeroAfterExpired(item) {
   return item.name === PASSES;
-}
-
-function calculateNewQuality(item) {
-  const name = item.name;
-  const quality = item.quality;
-  const sell_in = item.sell_in;
-
-  let newQuality = new Quality(quality);
-
-  if (isExpired(item)) {
-    if (qualityZeroAfterExpired(item)) {
-      newQuality.set(0);
-    } else if (qualityIncreasesWithAge(item)) {
-      newQuality.add(2);
-    } else {
-      newQuality.subtract(2);
-    }
-  }
-  else {
-    if (!qualityIncreasesWithAge(item)) {
-      newQuality.subtract(1);
-    } else {
-      newQuality.add(1);
-      if (name === PASSES) {
-        if (sell_in < 10) {
-          newQuality.add(1);
-        }
-        if (sell_in < 5) {
-          newQuality.add(1);
-        }
-      }
-    }
-  }
-
-  return newQuality.value;
-}
-
-function update_quality() {
-  items.forEach((item) => {
-    if (!isLegendary(item)) {
-      item.sell_in--;
-      item.quality = calculateNewQuality(item);
-    }
-  });
 }
 
 module.exports.items = items;
